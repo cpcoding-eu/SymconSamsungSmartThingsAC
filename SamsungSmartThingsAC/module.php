@@ -2,7 +2,7 @@
 
 class SamsungSmartThingsAC extends IPSModule
 {
-    private string $baseUrl = 'https://api.smartthings.com/v1';
+    private $baseUrl = 'https://api.smartthings.com/v1';
 
     public function Create(): void
     {
@@ -13,13 +13,8 @@ class SamsungSmartThingsAC extends IPSModule
         $this->RegisterPropertyString('Component', 'main');
         $this->RegisterPropertyInteger('PollingInterval', 60);
         $this->RegisterPropertyInteger('PendingSeconds', 25);
-        $this->RegisterPropertyFloat('MinTemperature', 16.0);
-        $this->RegisterPropertyFloat('MaxTemperature', 30.0);
-        $this->RegisterPropertyFloat('TemperatureStep', 1.0);
-        $this->RegisterPropertyBoolean('EnableOptionalMode', true);
-        $this->RegisterPropertyBoolean('EnableDebug', false);
 
-        $this->RegisterTimer('RefreshTimer', 0, 'STAC_Refresh($_IPS[\'TARGET\']);');
+        $this->RegisterTimer('RefreshTimer', 0, 'STAC_Refresh($_IPS["TARGET"]);');
     }
 
     public function ApplyChanges(): void
@@ -33,36 +28,28 @@ class SamsungSmartThingsAC extends IPSModule
         $this->SetTimerInterval('RefreshTimer', $interval > 0 ? $interval * 1000 : 0);
 
         if ($this->ReadPropertyString('DeviceID') === '' || $this->ReadPropertyString('Token') === '') {
-            $this->SetStatus(104); // inactive / not fully configured
+            $this->SetStatus(104);
             return;
         }
 
-        $this->SetStatus(102); // active
+        $this->SetStatus(102);
     }
 
-    public function RequestAction(string $Ident, $Value): void
+    public function RequestAction(string $Ident, mixed $Value): void
     {
         switch ($Ident) {
             case 'Power':
-                $this->SetPower((bool)$Value);
+                $this->SetPower((bool) $Value);
                 break;
-
             case 'TargetTemperature':
-                $this->SetTargetTemperature((float)$Value);
+                $this->SetTargetTemperature((float) $Value);
                 break;
-
             case 'Mode':
-                $this->SetMode((int)$Value);
+                $this->SetMode((int) $Value);
                 break;
-
             case 'FanMode':
-                $this->SetFanMode((int)$Value);
+                $this->SetFanMode((int) $Value);
                 break;
-
-            case 'OptionalMode':
-                $this->SetOptionalMode((int)$Value);
-                break;
-
             default:
                 throw new Exception('Invalid Ident: ' . $Ident);
         }
@@ -72,7 +59,7 @@ class SamsungSmartThingsAC extends IPSModule
     {
         try {
             $device = $this->GetDevice();
-            $label = isset($device['label']) ? $device['label'] : '(ohne Label)';
+            $label = isset($device['label']) ? (string) $device['label'] : '(ohne Label)';
             $this->SetValue('LastError', 'OK: ' . $label);
             IPS_LogMessage('Samsung SmartThings AC', 'Verbindung OK: ' . $label);
             return true;
@@ -86,127 +73,85 @@ class SamsungSmartThingsAC extends IPSModule
     public function DumpStatus(): void
     {
         try {
-            $status = $this->GetStatus();
-            IPS_LogMessage('Samsung SmartThings AC Status', json_encode($status, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+            IPS_LogMessage('Samsung SmartThings AC Status', json_encode($this->GetStatus(), JSON_PRETTY_PRINT));
         } catch (Exception $e) {
-            IPS_LogMessage('Samsung SmartThings AC Status', 'Fehler: ' . $e->getMessage());
+            IPS_LogMessage('Samsung SmartThings AC Status', $e->getMessage());
         }
     }
 
     public function Refresh(): void
     {
-        if ($this->ReadPropertyString('DeviceID') === '' || $this->ReadPropertyString('Token') === '') {
-            return;
-        }
-
         try {
             $status = $this->GetStatus();
 
             $power = $this->ReadAttribute($status, 'switch', 'switch', null);
-            if ($power !== null) {
-                $this->UpdateFromCloud('Power', $power === 'on');
-            }
-
             $targetTemp = $this->ReadAttribute($status, 'thermostatCoolingSetpoint', 'coolingSetpoint', null);
-            if ($targetTemp !== null) {
-                $this->UpdateFromCloud('TargetTemperature', (float)$targetTemp);
-            }
-
-            $currentTemp = $this->ReadAttribute($status, 'temperatureMeasurement', 'temperature', null);
-            if ($currentTemp !== null) {
-                $this->SetValue('CurrentTemperature', (float)$currentTemp);
-            }
-
-            $humidity = $this->ReadAttribute($status, 'relativeHumidityMeasurement', 'humidity', null);
-            if ($humidity !== null && @$this->GetIDForIdent('Humidity')) {
-                $this->SetValue('Humidity', (float)$humidity);
-            }
-
+            $roomTemp = $this->ReadAttribute($status, 'temperatureMeasurement', 'temperature', null);
             $mode = $this->ReadAttribute($status, 'airConditionerMode', 'airConditionerMode', null);
-            if ($mode !== null) {
-                $this->UpdateFromCloud('Mode', $this->ModeStringToInt((string)$mode));
-            }
-
             $fan = $this->ReadAttribute($status, 'airConditionerFanMode', 'fanMode', null);
-            if ($fan !== null) {
-                $this->UpdateFromCloud('FanMode', $this->FanStringToInt((string)$fan));
+
+            if ($roomTemp !== null) {
+                $this->SetValue('CurrentTemperature', (float) $roomTemp);
             }
 
-            if ($this->ReadPropertyBoolean('EnableOptionalMode')) {
-                $optional = $this->ReadAttribute($status, 'custom.airConditionerOptionalMode', 'acOptionalMode', null);
-                if ($optional !== null) {
-                    $this->UpdateFromCloud('OptionalMode', $this->OptionalModeStringToInt((string)$optional));
-                }
+            if (!$this->IsPending('Power') && $power !== null) {
+                $this->SetValue('Power', $power === 'on');
+            }
+            if (!$this->IsPending('TargetTemperature') && $targetTemp !== null) {
+                $this->SetValue('TargetTemperature', (float) $targetTemp);
+            }
+            if (!$this->IsPending('Mode') && $mode !== null) {
+                $this->SetValue('Mode', $this->ModeToInt((string) $mode));
+            }
+            if (!$this->IsPending('FanMode') && $fan !== null) {
+                $this->SetValue('FanMode', $this->FanToInt((string) $fan));
             }
 
             $this->SetValue('LastUpdate', time());
             $this->SetValue('LastError', '');
-            $this->SetStatus(102);
         } catch (Exception $e) {
             $this->SetValue('LastError', $e->getMessage());
-            $this->SetStatus(201);
-            IPS_LogMessage('Samsung SmartThings AC', $e->getMessage());
+            IPS_LogMessage('Samsung SmartThings AC Refresh', $e->getMessage());
         }
     }
 
-    public function SetPower(bool $value): void
+    public function SetPower(bool $Value): void
     {
-        $command = $value ? 'on' : 'off';
-        $this->SendCommand('switch', $command, array());
-        $this->SetValue('Power', (bool)$value);
-        $this->SetPending('Power', (bool)$value);
+        $command = $Value ? 'on' : 'off';
+        $this->SendCommand('switch', $command, []);
+        $this->SetValue('Power', $Value);
+        $this->SetPending('Power');
     }
 
-    public function SetTargetTemperature(float $temperature): void
+    public function SetTargetTemperature(float $Value): void
     {
-        $min = $this->ReadPropertyFloat('MinTemperature');
-        $max = $this->ReadPropertyFloat('MaxTemperature');
-        $temperature = max($min, min($max, (float)$temperature));
-
-        $this->SendCommand('thermostatCoolingSetpoint', 'setCoolingSetpoint', array($temperature));
-        $this->SetValue('TargetTemperature', $temperature);
-        $this->SetPending('TargetTemperature', $temperature);
+        $this->SendCommand('thermostatCoolingSetpoint', 'setCoolingSetpoint', [$Value]);
+        $this->SetValue('TargetTemperature', $Value);
+        $this->SetPending('TargetTemperature');
     }
 
-    public function SetMode(int $modeId): void
+    public function SetMode(int $Value): void
     {
-        $mode = $this->ModeIntToString((int)$modeId);
-        $this->SendCommand('airConditionerMode', 'setAirConditionerMode', array($mode));
-        $this->SetValue('Mode', (int)$modeId);
-        $this->SetPending('Mode', (int)$modeId);
+        $mode = $this->IntToMode($Value);
+        $this->SendCommand('airConditionerMode', 'setAirConditionerMode', [$mode]);
+        $this->SetValue('Mode', $Value);
+        $this->SetPending('Mode');
     }
 
-    public function SetFanMode(int $fanId): void
+    public function SetFanMode(int $Value): void
     {
-        $fan = $this->FanIntToString((int)$fanId);
-        $this->SendCommand('airConditionerFanMode', 'setFanMode', array($fan));
-        $this->SetValue('FanMode', (int)$fanId);
-        $this->SetPending('FanMode', (int)$fanId);
+        $fan = $this->IntToFan($Value);
+        $this->SendCommand('airConditionerFanMode', 'setFanMode', [$fan]);
+        $this->SetValue('FanMode', $Value);
+        $this->SetPending('FanMode');
     }
 
-    public function SetOptionalMode(int $modeId): void
+    private function RegisterVariables(): void
     {
-        $mode = $this->OptionalModeIntToString((int)$modeId);
-        $this->SendCommand('custom.airConditionerOptionalMode', 'setAcOptionalMode', array($mode));
-        $this->SetValue('OptionalMode', (int)$modeId);
-        $this->SetPending('OptionalMode', (int)$modeId);
-    }
-
-    public function SendRawCommand(string $capability, string $command, string $argumentsJson = '[]'): array
-    {
-        $arguments = json_decode($argumentsJson, true);
-        if (!is_array($arguments)) {
-            throw new Exception('argumentsJson muss ein JSON-Array sein.');
-        }
-        return $this->SendCommand($capability, $command, $arguments);
-    }
-
-    private function RegisterVariables()
-    {
-        $this->RegisterVariableBoolean('Power', 'Power', '~Switch', 10);
+        $this->RegisterVariableBoolean('Power', 'Ein/Aus', '~Switch', 10);
         $this->EnableAction('Power');
 
-        $this->RegisterVariableFloat('TargetTemperature', 'Solltemperatur', 'STAC.Temperature', 20);
+        $this->RegisterVariableFloat('TargetTemperature', 'Solltemperatur', '~Temperature', 20);
         $this->EnableAction('TargetTemperature');
 
         $this->RegisterVariableFloat('CurrentTemperature', 'Isttemperatur', '~Temperature', 30);
@@ -217,268 +162,141 @@ class SamsungSmartThingsAC extends IPSModule
         $this->RegisterVariableInteger('FanMode', 'Lüfter', 'STAC.FanMode', 50);
         $this->EnableAction('FanMode');
 
-        if ($this->ReadPropertyBoolean('EnableOptionalMode')) {
-            $this->RegisterVariableInteger('OptionalMode', 'Optional Mode', 'STAC.OptionalMode', 60);
-            $this->EnableAction('OptionalMode');
-        }
-
-        $this->RegisterVariableFloat('Humidity', 'Luftfeuchtigkeit', '~Humidity.F', 70);
         $this->RegisterVariableInteger('LastUpdate', 'Letzte Aktualisierung', '~UnixTimestamp', 90);
         $this->RegisterVariableString('LastError', 'Letzter Fehler', '', 100);
     }
 
-    private function RegisterProfiles()
+    private function RegisterProfiles(): void
     {
-        $this->RegisterProfileFloat('STAC.Temperature', 'Temperature', '', ' °C', $this->ReadPropertyFloat('MinTemperature'), $this->ReadPropertyFloat('MaxTemperature'), $this->ReadPropertyFloat('TemperatureStep'), 1);
-
-        $this->RegisterProfileInteger('STAC.Mode', 'Climate', '', '', array(
-            array(0, 'Cool', '', 0x00AEEF),
-            array(1, 'Heat', '', 0xFF6600),
-            array(2, 'Dry', '', 0xC0C0C0),
-            array(3, 'Fan Only', '', 0x00CC66),
-            array(4, 'Auto', '', 0xFFFF00)
-        ));
-
-        $this->RegisterProfileInteger('STAC.FanMode', 'Ventilation', '', '', array(
-            array(0, 'Auto', '', 0xFFFF00),
-            array(1, 'Low', '', 0x99CCFF),
-            array(2, 'Medium', '', 0x3399FF),
-            array(3, 'High', '', 0x0066CC),
-            array(4, 'Turbo', '', 0x003366)
-        ));
-
-        $this->RegisterProfileInteger('STAC.OptionalMode', 'Information', '', '', array(
-            array(0, 'Off', '', 0xC0C0C0),
-            array(1, 'Quiet', '', 0x99CCFF),
-            array(2, 'WindFree', '', 0x00CCFF),
-            array(3, 'Sleep', '', 0x6666FF)
-        ));
-    }
-
-    private function RegisterProfileInteger($name, $icon, $prefix, $suffix, $associations)
-    {
-        if (!IPS_VariableProfileExists($name)) {
-            IPS_CreateVariableProfile($name, 1);
+        if (!IPS_VariableProfileExists('STAC.Mode')) {
+            IPS_CreateVariableProfile('STAC.Mode', 1);
+            IPS_SetVariableProfileAssociation('STAC.Mode', 0, 'Cool', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.Mode', 1, 'Heat', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.Mode', 2, 'Dry', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.Mode', 3, 'Fan Only', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.Mode', 4, 'Auto', '', -1);
         }
-        IPS_SetVariableProfileIcon($name, $icon);
-        IPS_SetVariableProfileText($name, $prefix, $suffix);
-        foreach ($associations as $association) {
-            IPS_SetVariableProfileAssociation($name, $association[0], $association[1], $association[2], $association[3]);
+        if (!IPS_VariableProfileExists('STAC.FanMode')) {
+            IPS_CreateVariableProfile('STAC.FanMode', 1);
+            IPS_SetVariableProfileAssociation('STAC.FanMode', 0, 'Auto', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.FanMode', 1, 'Low', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.FanMode', 2, 'Medium', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.FanMode', 3, 'High', '', -1);
+            IPS_SetVariableProfileAssociation('STAC.FanMode', 4, 'Turbo', '', -1);
         }
     }
 
-    private function RegisterProfileFloat($name, $icon, $prefix, $suffix, $min, $max, $step, $digits)
+    private function SendCommand(string $Capability, string $Command, array $Arguments): array
     {
-        if (!IPS_VariableProfileExists($name)) {
-            IPS_CreateVariableProfile($name, 2);
-        }
-        IPS_SetVariableProfileIcon($name, $icon);
-        IPS_SetVariableProfileText($name, $prefix, $suffix);
-        IPS_SetVariableProfileValues($name, $min, $max, $step);
-        IPS_SetVariableProfileDigits($name, $digits);
+        $deviceId = $this->ReadPropertyString('DeviceID');
+        $component = $this->ReadPropertyString('Component');
+        return $this->Request('POST', '/devices/' . rawurlencode($deviceId) . '/commands', [
+            'commands' => [[
+                'component' => $component,
+                'capability' => $Capability,
+                'command' => $Command,
+                'arguments' => $Arguments
+            ]]
+        ]);
     }
 
-    private function SendCommand($capability, $command, $arguments)
-    {
-        $payload = array(
-            'commands' => array(
-                array(
-                    'component' => $this->ReadPropertyString('Component'),
-                    'capability' => $capability,
-                    'command' => $command,
-                    'arguments' => array_values($arguments)
-                )
-            )
-        );
-
-        return $this->Request('POST', '/devices/' . rawurlencode($this->ReadPropertyString('DeviceID')) . '/commands', $payload);
-    }
-
-    private function GetStatus()
-    {
-        return $this->Request('GET', '/devices/' . rawurlencode($this->ReadPropertyString('DeviceID')) . '/components/' . rawurlencode($this->ReadPropertyString('Component')) . '/status', null);
-    }
-
-    private function GetDevice()
+    private function GetDevice(): array
     {
         return $this->Request('GET', '/devices/' . rawurlencode($this->ReadPropertyString('DeviceID')), null);
     }
 
-    private function Request($method, $endpoint, $payload)
+    private function GetStatus(): array
+    {
+        return $this->Request('GET', '/devices/' . rawurlencode($this->ReadPropertyString('DeviceID')) . '/components/' . rawurlencode($this->ReadPropertyString('Component')) . '/status', null);
+    }
+
+    private function Request(string $Method, string $Endpoint, ?array $Payload): array
     {
         $token = $this->ReadPropertyString('Token');
         if ($token === '') {
             throw new Exception('SmartThings Token fehlt.');
         }
 
-        $curl = curl_init();
-        $headers = array(
+        $ch = curl_init();
+        $headers = [
             'Accept: application/json',
             'Authorization: Bearer ' . $token
-        );
-
-        if ($payload !== null) {
+        ];
+        if ($Payload !== null) {
             $headers[] = 'Content-Type: application/json';
         }
 
-        curl_setopt_array($curl, array(
-            CURLOPT_URL => $this->baseUrl . $endpoint,
+        curl_setopt_array($ch, [
+            CURLOPT_URL => $this->baseUrl . $Endpoint,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_CUSTOMREQUEST => $method,
+            CURLOPT_CUSTOMREQUEST => $Method,
             CURLOPT_HTTPHEADER => $headers,
-            CURLOPT_TIMEOUT => 25,
-            CURLOPT_CONNECTTIMEOUT => 10
-        ));
+            CURLOPT_TIMEOUT => 20
+        ]);
 
-        if ($payload !== null) {
-            curl_setopt($curl, CURLOPT_POSTFIELDS, json_encode($payload));
+        if ($Payload !== null) {
+            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($Payload));
         }
 
-        $response = curl_exec($curl);
-        $error = curl_error($curl);
-        $code = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        curl_close($curl);
+        $response = curl_exec($ch);
+        $error = curl_error($ch);
+        $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
 
-        if ($this->ReadPropertyBoolean('EnableDebug')) {
-            $this->SendDebug('SmartThings Request', $method . ' ' . $endpoint, 0);
-            if ($payload !== null) {
-                $this->SendDebug('SmartThings Payload', json_encode($payload), 0);
-            }
-            $this->SendDebug('SmartThings Response', 'HTTP ' . $code . ': ' . (string)$response, 0);
-        }
-
-        if ($error) {
+        if ($error !== '') {
             throw new Exception('cURL Fehler: ' . $error);
         }
-
-        $json = json_decode((string)$response, true);
-
         if ($code < 200 || $code >= 300) {
-            $message = is_array($json) && isset($json['message']) ? $json['message'] : (string)$response;
-            throw new Exception('SmartThings HTTP ' . $code . ': ' . $message);
+            throw new Exception('SmartThings HTTP ' . $code . ': ' . (string) $response);
         }
 
-        return is_array($json) ? $json : array();
+        $json = json_decode((string) $response, true);
+        return is_array($json) ? $json : [];
     }
 
-    private function ReadAttribute($status, $capability, $attribute, $default)
+    private function ReadAttribute(array $Status, string $Capability, string $Attribute, mixed $Default): mixed
     {
-        if (isset($status[$capability]) && isset($status[$capability][$attribute]) && array_key_exists('value', $status[$capability][$attribute])) {
-            return $status[$capability][$attribute]['value'];
+        return $Status[$Capability][$Attribute]['value'] ?? $Default;
+    }
+
+    private function SetPending(string $Ident): void
+    {
+        $this->SetBuffer($Ident . 'PendingUntil', (string) (time() + $this->ReadPropertyInteger('PendingSeconds')));
+    }
+
+    private function IsPending(string $Ident): bool
+    {
+        $value = $this->GetBuffer($Ident . 'PendingUntil');
+        return $value !== '' && time() < (int) $value;
+    }
+
+    private function IntToMode(int $Value): string
+    {
+        $map = [0 => 'cool', 1 => 'heat', 2 => 'dry', 3 => 'fanOnly', 4 => 'auto'];
+        if (!array_key_exists($Value, $map)) {
+            throw new Exception('Ungueltiger Modus: ' . $Value);
         }
-        return $default;
+        return $map[$Value];
     }
 
-    private function UpdateFromCloud($ident, $cloudValue)
+    private function ModeToInt(string $Value): int
     {
-        if (!$this->HasIdent($ident)) {
-            return;
+        $map = ['cool' => 0, 'heat' => 1, 'dry' => 2, 'fanOnly' => 3, 'auto' => 4];
+        return $map[$Value] ?? 0;
+    }
+
+    private function IntToFan(int $Value): string
+    {
+        $map = [0 => 'auto', 1 => 'low', 2 => 'medium', 3 => 'high', 4 => 'turbo'];
+        if (!array_key_exists($Value, $map)) {
+            throw new Exception('Ungueltiger Lueftermodus: ' . $Value);
         }
-
-        if ($this->IsPending($ident)) {
-            $expected = $this->GetExpected($ident);
-            if ($this->ValuesEqual($expected, $cloudValue)) {
-                $this->SetValue($ident, $cloudValue);
-                $this->ClearPending($ident);
-            }
-            return;
-        }
-
-        $this->SetValue($ident, $cloudValue);
-        $this->ClearPending($ident);
+        return $map[$Value];
     }
 
-    private function SetPending($ident, $expected)
+    private function FanToInt(string $Value): int
     {
-        $seconds = $this->ReadPropertyInteger('PendingSeconds');
-        $this->SetBuffer($ident . 'PendingUntil', (string)(time() + $seconds));
-        $this->SetBuffer($ident . 'ExpectedValue', json_encode($expected));
-    }
-
-    private function ClearPending($ident)
-    {
-        $this->SetBuffer($ident . 'PendingUntil', '0');
-        $this->SetBuffer($ident . 'ExpectedValue', '');
-    }
-
-    private function IsPending($ident)
-    {
-        $until = (int)$this->GetBuffer($ident . 'PendingUntil');
-        if ($until <= 0) {
-            return false;
-        }
-        if (time() > $until) {
-            $this->ClearPending($ident);
-            return false;
-        }
-        return true;
-    }
-
-    private function GetExpected($ident)
-    {
-        $raw = $this->GetBuffer($ident . 'ExpectedValue');
-        if ($raw === '') {
-            return null;
-        }
-        return json_decode($raw, true);
-    }
-
-    private function ValuesEqual($a, $b)
-    {
-        if (is_float($a) || is_float($b) || is_numeric($a) || is_numeric($b)) {
-            return abs((float)$a - (float)$b) < 0.05;
-        }
-        return $a === $b;
-    }
-
-    private function HasIdent($ident)
-    {
-        $id = @$this->GetIDForIdent($ident);
-        return $id !== false && $id > 0;
-    }
-
-    private function ModeIntToString($value)
-    {
-        $map = array(0 => 'cool', 1 => 'heat', 2 => 'dry', 3 => 'fanOnly', 4 => 'auto');
-        if (!array_key_exists($value, $map)) {
-            throw new Exception('Ungültiger Modus: ' . $value);
-        }
-        return $map[$value];
-    }
-
-    private function ModeStringToInt($value)
-    {
-        $map = array('cool' => 0, 'heat' => 1, 'dry' => 2, 'fanOnly' => 3, 'auto' => 4);
-        return array_key_exists($value, $map) ? $map[$value] : 4;
-    }
-
-    private function FanIntToString($value)
-    {
-        $map = array(0 => 'auto', 1 => 'low', 2 => 'medium', 3 => 'high', 4 => 'turbo');
-        if (!array_key_exists($value, $map)) {
-            throw new Exception('Ungültiger Lüftermodus: ' . $value);
-        }
-        return $map[$value];
-    }
-
-    private function FanStringToInt($value)
-    {
-        $map = array('auto' => 0, 'low' => 1, 'medium' => 2, 'high' => 3, 'turbo' => 4);
-        return array_key_exists($value, $map) ? $map[$value] : 0;
-    }
-
-    private function OptionalModeIntToString($value)
-    {
-        $map = array(0 => 'off', 1 => 'quiet', 2 => 'windFree', 3 => 'sleep');
-        if (!array_key_exists($value, $map)) {
-            throw new Exception('Ungültiger Optional Mode: ' . $value);
-        }
-        return $map[$value];
-    }
-
-    private function OptionalModeStringToInt($value)
-    {
-        $map = array('off' => 0, 'none' => 0, 'quiet' => 1, 'windFree' => 2, 'sleep' => 3);
-        return array_key_exists($value, $map) ? $map[$value] : 0;
+        $map = ['auto' => 0, 'low' => 1, 'medium' => 2, 'high' => 3, 'turbo' => 4];
+        return $map[$Value] ?? 0;
     }
 }

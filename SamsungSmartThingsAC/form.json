@@ -1,74 +1,14 @@
 {
-    "elements": [
-        {
-            "type": "ValidationTextBox",
-            "name": "DeviceID",
-            "caption": "SmartThings Device ID"
-        },
-        {
-            "type": "PasswordTextBox",
-            "name": "Token",
-            "caption": "SmartThings Personal Access Token"
-        },
-        {
-            "type": "ValidationTextBox",
-            "name": "Component",
-            "caption": "Component"
-        },
-        {
-            "type": "NumberSpinner",
-            "name": "PollingInterval",
-            "caption": "Polling-Intervall in Sekunden",
-            "minimum": 0,
-            "maximum": 3600
-        },
-        {
-            "type": "NumberSpinner",
-            "name": "PendingSeconds",
-            "caption": "Pending-Sperrzeit in Sekunden",
-            "minimum": 5,
-            "maximum": 120
-        },
-        {
-            "type": "NumberSpinner",
-            "name": "MinTemperature",
-            "caption": "Min. Solltemperatur",
-            "minimum": 10,
-            "maximum": 30
-        },
-        {
-            "type": "NumberSpinner",
-            "name": "MaxTemperature",
-            "caption": "Max. Solltemperatur",
-            "minimum": 16,
-            "maximum": 35
-        },
-        {
-            "type": "CheckBox",
-            "name": "EnableOptionalMode",
-            "caption": "Optional Mode Variable anlegen"
-        },
-        {
-            "type": "CheckBox",
-            "name": "EnableDebug",
-            "caption": "Debug-Ausgaben aktivieren"
-        }
-    ],
-    "actions": [
-        {
-            "type": "Button",
-            "caption": "Verbindung testen",
-            "onClick": "STAC_TestConnection($id);"
-        },
-        {
-            "type": "Button",
-            "caption": "Jetzt aktualisieren",
-            "onClick": "STAC_Refresh($id);"
-        },
-        {
-            "type": "Button",
-            "caption": "Status-Dump ins Meldungsfenster schreiben",
-            "onClick": "STAC_DumpStatus($id);"
-        }
-    ]
+  "elements": [
+    { "type": "ValidationTextBox", "name": "DeviceID", "caption": "SmartThings Device ID" },
+    { "type": "PasswordTextBox", "name": "Token", "caption": "SmartThings Personal Access Token" },
+    { "type": "ValidationTextBox", "name": "Component", "caption": "Component" },
+    { "type": "NumberSpinner", "name": "PollingInterval", "caption": "Polling-Intervall Sekunden", "minimum": 0, "maximum": 3600 },
+    { "type": "NumberSpinner", "name": "PendingSeconds", "caption": "Pending-Sperrzeit Sekunden", "minimum": 5, "maximum": 120 }
+  ],
+  "actions": [
+    { "type": "Button", "caption": "Verbindung testen", "onClick": "STAC_TestConnection($id);" },
+    { "type": "Button", "caption": "Jetzt aktualisieren", "onClick": "STAC_Refresh($id);" },
+    { "type": "Button", "caption": "Status-Dump ins Log", "onClick": "STAC_DumpStatus($id);" }
+  ]
 }

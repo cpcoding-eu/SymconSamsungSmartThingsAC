@@ -1,5 +1,5 @@
-# Samsung SmartThings AC für Symcon
+# Samsung SmartThings AC for Symcon
 
-PHP-Modul für Samsung Klimaanlagen über SmartThings.
+Erste Symcon-9-kompatible Testversion fuer Samsung-Klimaanlagen ueber SmartThings.
 
-Root-Struktur: `library.json` muss direkt im Repository-Root liegen.
+Die `library.json` muss direkt im Root des GitHub-Repositories liegen.

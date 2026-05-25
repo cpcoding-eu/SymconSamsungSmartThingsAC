@@ -1,17 +1,16 @@
 {
-    "id": "{7197D8AF-5C34-4F7E-A504-DAA99C9F5D65}",
-    "name": "Samsung SmartThings AC",
-    "type": 3,
-    "vendor": "Samsung",
-    "aliases": [
-        "Samsung Klimaanlage",
-        "Samsung SmartThings Klimaanlage",
-        "SmartThings AC",
-        "Samsung Air Conditioner"
-    ],
-    "url": "https://github.com/",
-    "parentRequirements": [],
-    "childRequirements": [],
-    "implemented": [],
-    "prefix": "STAC"
+  "id": "{7197D8AF-5C34-4F7E-A504-DAA99C9F5D65}",
+  "name": "Samsung SmartThings AC",
+  "type": 3,
+  "vendor": "Samsung",
+  "aliases": [
+    "Samsung SmartThings AC",
+    "Samsung Klimaanlage",
+    "SmartThings AC"
+  ],
+  "url": "https://github.com/",
+  "parentRequirements": [],
+  "childRequirements": [],
+  "implemented": [],
+  "prefix": "STAC"
 }

@@ -2,9 +2,9 @@
 
 class SamsungSmartThingsAC extends IPSModule
 {
-    private $baseUrl = 'https://api.smartthings.com/v1';
+    private string $baseUrl = 'https://api.smartthings.com/v1';
 
-    public function Create()
+    public function Create(): void
     {
         parent::Create();
 
@@ -22,7 +22,7 @@ class SamsungSmartThingsAC extends IPSModule
         $this->RegisterTimer('RefreshTimer', 0, 'STAC_Refresh($_IPS[\'TARGET\']);');
     }
 
-    public function ApplyChanges()
+    public function ApplyChanges(): void
     {
         parent::ApplyChanges();
 
@@ -40,7 +40,7 @@ class SamsungSmartThingsAC extends IPSModule
         $this->SetStatus(102); // active
     }
 
-    public function RequestAction($Ident, $Value)
+    public function RequestAction(string $Ident, $Value): void
     {
         switch ($Ident) {
             case 'Power':
@@ -68,7 +68,7 @@ class SamsungSmartThingsAC extends IPSModule
         }
     }
 
-    public function TestConnection()
+    public function TestConnection(): bool
     {
         try {
             $device = $this->GetDevice();
@@ -83,7 +83,7 @@ class SamsungSmartThingsAC extends IPSModule
         }
     }
 
-    public function DumpStatus()
+    public function DumpStatus(): void
     {
         try {
             $status = $this->GetStatus();
@@ -93,7 +93,7 @@ class SamsungSmartThingsAC extends IPSModule
         }
     }
 
-    public function Refresh()
+    public function Refresh(): void
     {
         if ($this->ReadPropertyString('DeviceID') === '' || $this->ReadPropertyString('Token') === '') {
             return;
@@ -149,7 +149,7 @@ class SamsungSmartThingsAC extends IPSModule
         }
     }
 
-    public function SetPower($value)
+    public function SetPower(bool $value): void
     {
         $command = $value ? 'on' : 'off';
         $this->SendCommand('switch', $command, array());
@@ -157,7 +157,7 @@ class SamsungSmartThingsAC extends IPSModule
         $this->SetPending('Power', (bool)$value);
     }
 
-    public function SetTargetTemperature($temperature)
+    public function SetTargetTemperature(float $temperature): void
     {
         $min = $this->ReadPropertyFloat('MinTemperature');
         $max = $this->ReadPropertyFloat('MaxTemperature');
@@ -168,7 +168,7 @@ class SamsungSmartThingsAC extends IPSModule
         $this->SetPending('TargetTemperature', $temperature);
     }
 
-    public function SetMode($modeId)
+    public function SetMode(int $modeId): void
     {
         $mode = $this->ModeIntToString((int)$modeId);
         $this->SendCommand('airConditionerMode', 'setAirConditionerMode', array($mode));
@@ -176,7 +176,7 @@ class SamsungSmartThingsAC extends IPSModule
         $this->SetPending('Mode', (int)$modeId);
     }
 
-    public function SetFanMode($fanId)
+    public function SetFanMode(int $fanId): void
     {
         $fan = $this->FanIntToString((int)$fanId);
         $this->SendCommand('airConditionerFanMode', 'setFanMode', array($fan));
@@ -184,7 +184,7 @@ class SamsungSmartThingsAC extends IPSModule
         $this->SetPending('FanMode', (int)$fanId);
     }
 
-    public function SetOptionalMode($modeId)
+    public function SetOptionalMode(int $modeId): void
     {
         $mode = $this->OptionalModeIntToString((int)$modeId);
         $this->SendCommand('custom.airConditionerOptionalMode', 'setAcOptionalMode', array($mode));
@@ -192,7 +192,7 @@ class SamsungSmartThingsAC extends IPSModule
         $this->SetPending('OptionalMode', (int)$modeId);
     }
 
-    public function SendRawCommand($capability, $command, $argumentsJson = '[]')
+    public function SendRawCommand(string $capability, string $command, string $argumentsJson = '[]'): array
     {
         $arguments = json_decode($argumentsJson, true);
         if (!is_array($arguments)) {

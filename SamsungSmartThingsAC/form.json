@@ -13,8 +13,7 @@
         {
             "type": "ValidationTextBox",
             "name": "Component",
-            "caption": "Component",
-            "default": "main"
+            "caption": "Component"
         },
         {
             "type": "NumberSpinner",
@@ -26,7 +25,7 @@
         {
             "type": "NumberSpinner",
             "name": "PendingSeconds",
-            "caption": "Pending-Sperrzeit nach Befehl in Sekunden",
+            "caption": "Pending-Sperrzeit in Sekunden",
             "minimum": 5,
             "maximum": 120
         },
@@ -43,14 +42,6 @@
             "caption": "Max. Solltemperatur",
             "minimum": 16,
             "maximum": 35
-        },
-        {
-            "type": "NumberSpinner",
-            "name": "TemperatureStep",
-            "caption": "Temperatur-Schrittweite",
-            "minimum": 0.5,
-            "maximum": 1.0,
-            "digits": 1
         },
         {
             "type": "CheckBox",

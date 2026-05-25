@@ -1,0 +1,83 @@
+{
+    "elements": [
+        {
+            "type": "ValidationTextBox",
+            "name": "DeviceID",
+            "caption": "SmartThings Device ID"
+        },
+        {
+            "type": "PasswordTextBox",
+            "name": "Token",
+            "caption": "SmartThings Personal Access Token"
+        },
+        {
+            "type": "ValidationTextBox",
+            "name": "Component",
+            "caption": "Component",
+            "default": "main"
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "PollingInterval",
+            "caption": "Polling-Intervall in Sekunden",
+            "minimum": 0,
+            "maximum": 3600
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "PendingSeconds",
+            "caption": "Pending-Sperrzeit nach Befehl in Sekunden",
+            "minimum": 5,
+            "maximum": 120
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "MinTemperature",
+            "caption": "Min. Solltemperatur",
+            "minimum": 10,
+            "maximum": 30
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "MaxTemperature",
+            "caption": "Max. Solltemperatur",
+            "minimum": 16,
+            "maximum": 35
+        },
+        {
+            "type": "NumberSpinner",
+            "name": "TemperatureStep",
+            "caption": "Temperatur-Schrittweite",
+            "minimum": 0.5,
+            "maximum": 1.0,
+            "digits": 1
+        },
+        {
+            "type": "CheckBox",
+            "name": "EnableOptionalMode",
+            "caption": "Optional Mode Variable anlegen"
+        },
+        {
+            "type": "CheckBox",
+            "name": "EnableDebug",
+            "caption": "Debug-Ausgaben aktivieren"
+        }
+    ],
+    "actions": [
+        {
+            "type": "Button",
+            "caption": "Verbindung testen",
+            "onClick": "STAC_TestConnection($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Jetzt aktualisieren",
+            "onClick": "STAC_Refresh($id);"
+        },
+        {
+            "type": "Button",
+            "caption": "Status-Dump ins Meldungsfenster schreiben",
+            "onClick": "STAC_DumpStatus($id);"
+        }
+    ]
+}

@@ -2,11 +2,12 @@
     "id": "{7197D8AF-5C34-4F7E-A504-DAA99C9F5D65}",
     "name": "Samsung SmartThings AC",
     "type": 3,
-    "vendor": "Samsung / SmartThings",
+    "vendor": "Samsung",
     "aliases": [
         "Samsung Klimaanlage SmartThings",
         "Samsung SmartThings Air Conditioner"
     ],
+    "url": "https://github.com/YOUR-GITHUB-USER/SymconSamsungSmartThingsAC",
     "parentRequirements": [],
     "childRequirements": [],
     "implemented": [],

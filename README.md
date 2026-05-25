@@ -40,7 +40,9 @@ SmartThings meldet Zustände oft verzögert zurück. Ohne Schutz kann folgendes 
 
 Dieses Modul setzt nach jedem eigenen Befehl eine kurze Pending-Sperre pro Variable. Während dieser Zeit werden alte Cloud-Werte ignoriert. Sobald SmartThings den erwarteten Wert zurückmeldet, wird Pending beendet. Läuft Pending ab, wird wieder der echte Cloud-Zustand übernommen.
 
-## Installation in IP-Symcon
+## Installation
+
+Hinweis: `library.json` muss im Root des GitHub-Repositories liegen. In der Symcon-Konsole erscheint die Geräteinstanz unter dem Hersteller `Samsung` mit dem Namen `Samsung SmartThings AC`. in IP-Symcon
 
 1. Repository nach GitHub hochladen.
 2. In IP-Symcon unter **Kerninstanzen > Modules** das Repository hinzufügen.

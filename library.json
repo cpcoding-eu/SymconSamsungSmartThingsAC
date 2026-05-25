@@ -2,11 +2,11 @@
     "id": "{32F5C139-0E72-44BF-9AFA-501FAB987416}",
     "author": "Smycon / NEOOM",
     "name": "Samsung SmartThings AC",
-    "url": "https://github.com/YOUR-GITHUB-USER/SymconSamsungSmartThingsAC",
+    "url": "",
     "compatibility": {
-        "version": "6.0"
+        "version": "5.0"
     },
-    "version": "0.1.1",
-    "build": 2,
-    "date": 20260525
+    "version": "0.1.2",
+    "build": 3,
+    "date": 0
 }
